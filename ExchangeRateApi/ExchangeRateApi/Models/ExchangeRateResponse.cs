@@ -10,12 +10,18 @@ namespace ExchangeRateApi.Models
         public Rate MinRate { get; set; }
         public Rate MaxRate { get; set; }
         public decimal AverageRate { get; set; }
+        public string BaseCurrency { get; set; }
+        public string ConversionCurrency { get; set; }
 
-        public ExchangeRateResponse(Rate min, Rate max, decimal average)
+        public ExchangeRateResponse() {}
+
+        public ExchangeRateResponse(Rate min, Rate max, decimal average, string baseCurrency, string conversionCurrency)
         {
             MinRate = min;
             MaxRate = max;
             AverageRate = average;
+            BaseCurrency = baseCurrency;
+            ConversionCurrency = conversionCurrency;
         }
     }
 

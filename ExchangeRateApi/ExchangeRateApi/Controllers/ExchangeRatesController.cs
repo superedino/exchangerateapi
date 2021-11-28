@@ -1,10 +1,9 @@
 ﻿using ExchangeRateApi.Models;
 using ExchangeRateApi.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace ExchangeRateApi.Controllers
 {
@@ -12,7 +11,6 @@ namespace ExchangeRateApi.Controllers
     [ApiController]
     public class ExchangeRatesController : ControllerBase
     {
-        //IExchangeRateService
         private IExchangeRateService _service;
 
         public ExchangeRatesController(IExchangeRateService service)
@@ -22,11 +20,20 @@ namespace ExchangeRateApi.Controllers
 
         // GET: api/<ExchangeRatesController>
         [HttpGet]
-        public async Task<ExchangeRateResponse> Get([FromQuery] HistoricalRateRequest request)
+        public async Task<IActionResult> Get([FromQuery] ExchangeRateRequest request)
         {
-            var response = await _service.GetRates(request);
+            //TODO: Validate request
+            try
+            {
+                var response = await _service.GetRates(request);
 
-            return response;
+                return Ok(response);
+            }
+            catch(Exception e)
+            {
+                //log error
+                return StatusCode(500, e.Message);
+            }
         }
     }
 }

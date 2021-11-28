@@ -2,18 +2,18 @@
 {
     public class HistoricalRateResponse
     {
-        public Motd motd { get; set; }
-        public bool success { get; set; }
-        public bool historical { get; set; }
-        public string _base { get; set; }
-        public string date { get; set; }
-        public Rates rates { get; set; }
+        public Motd Motd { get; set; }
+        public bool Success { get; set; }
+        public bool Historical { get; set; }
+        public string Base { get; set; }
+        public string Date { get; set; }
+        public Rates Rates { get; set; }
     }
 
     public class Motd
     {
-        public string msg { get; set; }
-        public string url { get; set; }
+        public string Msg { get; set; }
+        public string Url { get; set; }
     }
 
     public class Rates

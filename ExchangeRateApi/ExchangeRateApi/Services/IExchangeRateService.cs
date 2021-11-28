@@ -6,6 +6,6 @@ namespace ExchangeRateApi.Services
 {
     public interface IExchangeRateService
     {
-        Task<ExchangeRateResponse> GetRates(HistoricalRateRequest request);
+        Task<ExchangeRateResponse> GetRates(ExchangeRateRequest request);
     }
 }

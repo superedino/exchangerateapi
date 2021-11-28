@@ -19,87 +19,91 @@ namespace ExchangeRateApi.Services
             _integrationClient = integrationClient;
         }
 
-        public async Task<ExchangeRateResponse> GetRates(HistoricalRateRequest request)
+        public async Task<ExchangeRateResponse> GetRates(ExchangeRateRequest request)
         {
-            //var test = DateTime.ParseExact("2012-04-05", "yyyy-MM-dd", CultureInfo.InvariantCulture);
-            //var dates = request.Dates;
-            //dates.Sort((d1, d2) => DateTime.Compare(DateTime.ParseExact(d1, "yyyy-MM-dd", CultureInfo.InvariantCulture), DateTime.ParseExact(d2, "yyyy-MM-dd", CultureInfo.InvariantCulture)));
-            //var responseString = await _httpClient.GetStringAsync("https://api.exchangerate.host/timeseries?start_date=2018-01-01&end_date=2020-01-04");
-            //var testo = DateTime.ParseExact(dates.Last(), "yyyy-MM-dd", CultureInfo.InvariantCulture) - DateTime.ParseExact(dates.First(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
-
-            //var daysSpans = new List<List<string>>();
-            //daysSpans.Add(new List<string>());
-            //int index = 0;
-            //foreach (var date in dates)
-            //{
-            //    if(daysSpans.Last().Count == 0)
-            //    {
-            //        daysSpans.Last().Add(date);
-            //    }
-            //    else if ((DateTime.ParseExact(date, "yyyy-MM-dd", CultureInfo.InvariantCulture) - DateTime.ParseExact(daysSpans.Last().First(), "yyyy-MM-dd", CultureInfo.InvariantCulture)).TotalDays <= 366)
-            //    {
-            //        daysSpans.Last().Add(date);
-            //    }
-            //    else
-            //    {
-            //        daysSpans.Add(new List<string>());
-            //        daysSpans.Last().Add(date);
-            //    }
-            //}
-
-            //var singleDates = new List<string>();
-            //var dateSpans = new List<List<string>>();
-            //foreach (var span in daysSpans)
-            //{
-            //    if (span.Count == 1)
-            //    {
-            //        singleDates.Add(span.First());
-            //    }
-            //    else
-            //    {
-            //        var span2 = new List<string>();
-            //        span2.Add(span.First());
-            //        span2.Add(span.Last());
-            //        dateSpans.Add(span2);
-            //    }
-            //}
-
-            
-
             var historicalRates = await _integrationClient.GetHistoricalRatesForDate(request.Dates, request.BaseCurrency);
 
-            Rate minRate = new Rate();
-            Rate maxRate = new Rate();
-            decimal sum = 0;
+            if (historicalRates == null || historicalRates.Count() == 0)
+            {
+                throw new Exception("Error, failed to load data!");
+            }
+
+            return GenerateResponse(historicalRates, request);
+        }
+
+        private ExchangeRateResponse GenerateResponse(IEnumerable<HistoricalRateResponse> historicalRates, ExchangeRateRequest request)
+        {
+            var response = new ExchangeRateResponse();
+            decimal sumOfValidRates = 0;
+            int numberOfValidRates = 0;
 
             foreach (var historicalRate in historicalRates)
             {
-                var rate = decimal.Parse((historicalRate.rates.GetType().GetProperty(request.SymbolCurrency).GetValue(historicalRate.rates)).ToString());
-                
-                if (sum == 0)
+                if (!historicalRate.Success || !request.Dates.Contains(historicalRate.Date))
                 {
-                    minRate = new Rate(historicalRate.date, rate);
-                    maxRate = new Rate(historicalRate.date, rate);
+                    continue;
+                }
+
+                decimal currentRateValue = 0;
+                string selectedCurrency = request.SymbolCurrency;
+
+                try
+                {
+                    currentRateValue = GetRateForSelectedCurrency(historicalRate.Rates, selectedCurrency);
+                }
+                catch (ArgumentNullException e)
+                {
+                    //TODO: Get default currency from AppSettings
+                    currentRateValue = historicalRate.Rates.SEK;
+                    selectedCurrency = $"{nameof(historicalRate.Rates.SEK)} (default)";
+                }
+
+                if (sumOfValidRates == 0)
+                {
+                    InitResponse(response, request, historicalRate, currentRateValue, selectedCurrency);
                 }
                 else
                 {
-                    if (rate < minRate.Value)
-                    {
-                        minRate = new Rate(historicalRate.date, rate);
-                    }
-
-                    if (rate > maxRate.Value)
-                    {
-                        maxRate = new Rate(historicalRate.date, rate);
-                    }
+                    UpdateResponseMinMaxRates(response, historicalRate, currentRateValue);
                 }
 
-                sum = sum + rate;
+                sumOfValidRates = sumOfValidRates + currentRateValue;
+                numberOfValidRates++;
             }
 
-            var result = new ExchangeRateResponse(minRate, maxRate, sum/historicalRates.Count());
+            response.AverageRate = sumOfValidRates / numberOfValidRates;
 
-            return result;
+            return response;
+        }
+        
+        private decimal GetRateForSelectedCurrency(Rates allRates, string selectedCurrency)
+        {
+            var convertedValueProperty = allRates.GetType().GetProperty(selectedCurrency).GetValue(allRates);
+            
+            return decimal.Parse(convertedValueProperty.ToString());
+        }
+
+        private void InitResponse(ExchangeRateResponse response, ExchangeRateRequest request, HistoricalRateResponse historicalRate, decimal currentRateValue, string selectedCurrency)
+        {
+            response.MinRate = new Rate(historicalRate.Date, currentRateValue);
+            response.MaxRate = new Rate(historicalRate.Date, currentRateValue);
+
+            response.ConversionCurrency = selectedCurrency;
+            response.BaseCurrency = request.BaseCurrency == historicalRate.Base
+                ? historicalRate.Base : $"{historicalRate.Base} (default)";
+        }
+
+        private void UpdateResponseMinMaxRates(ExchangeRateResponse response, HistoricalRateResponse historicalRate, decimal currentRateValue)
+        {
+            if (currentRateValue < response.MinRate.Value)
+            {
+                response.MinRate = new Rate(historicalRate.Date, currentRateValue);
+            }
+
+            if (currentRateValue > response.MaxRate.Value)
+            {
+                response.MaxRate = new Rate(historicalRate.Date, currentRateValue);
+            }
         }
     }
 }

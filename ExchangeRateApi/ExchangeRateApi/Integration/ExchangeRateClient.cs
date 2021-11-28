@@ -1,5 +1,6 @@
 ﻿using ExchangeRateApi.Models;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,9 +25,6 @@ namespace ExchangeRateApi.Integration
 
         public async Task<IEnumerable<HistoricalRateResponse>> GetHistoricalRatesForDate(List<string> dates, string baseCurrency)
         {
-            var responseString2 = await _httpClient.GetStringAsync($"/timeseries?start_date=2020-01-01&end_date=2021-01-04");
-
-            //var tasks = dates.Select(date => Task.Run(async () => await _httpClient.GetStringAsync($"/{date}?base={baseCurrency}&symbols={string.Join(",", symbolCurrencies)}")));
             var tasks = dates.Select(date => Task.Run(async () => await _httpClient.GetStringAsync($"/{date}?base={baseCurrency}")));
             var continuation = Task.WhenAll(tasks);
 
@@ -34,6 +32,7 @@ namespace ExchangeRateApi.Integration
 
             if (continuation.IsFaulted)
             {
+                //TODO: log
                 throw continuation.Exception;
             }
 
