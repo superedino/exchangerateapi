@@ -6,7 +6,7 @@ namespace ExchangeRateApi.Models
     {
         public List<string> Dates { get; set; }
 
-        public List<string> SymbolCurrencies { get; set; }
+        public string SymbolCurrency { get; set; }
 
         public string BaseCurrency { get; set; }
     }

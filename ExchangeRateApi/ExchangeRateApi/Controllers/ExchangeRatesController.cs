@@ -22,36 +22,11 @@ namespace ExchangeRateApi.Controllers
 
         // GET: api/<ExchangeRatesController>
         [HttpGet]
-        public async Task<IEnumerable<HistoricalRateResponse>> Get([FromQuery] HistoricalRateRequest request)
+        public async Task<ExchangeRateResponse> Get([FromQuery] HistoricalRateRequest request)
         {
             var response = await _service.GetRates(request);
 
             return response;
-        }
-
-        // GET api/<ExchangeRatesController>/5
-        [HttpGet("{id}")]
-        public string Get(int id)
-        {
-            return "value";
-        }
-
-        // POST api/<ExchangeRatesController>
-        [HttpPost]
-        public void Post([FromBody] string value)
-        {
-        }
-
-        // PUT api/<ExchangeRatesController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
-        {
-        }
-
-        // DELETE api/<ExchangeRatesController>/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
         }
     }
 }

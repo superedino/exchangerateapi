@@ -1,3 +1,4 @@
+using ExchangeRateApi.Integration;
 using ExchangeRateApi.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -28,10 +29,12 @@ namespace ExchangeRateApi
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "ExchangeRateApi", Version = "v1" });
             });
 
-            services.AddHttpClient<IExchangeRateService, ExchangeRateService>(client =>
+            services.AddHttpClient<IExchangeRateClient, ExchangeRateClient>(client =>
             {
                 client.BaseAddress = new Uri(Configuration["BaseUrl"]);
             });
+
+            services.AddTransient<IExchangeRateService, ExchangeRateService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
